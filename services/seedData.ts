@@ -1,8 +1,22 @@
 
-import type { StoredUser } from '../types';
+import type { Medicine } from '../types';
+import { supabase } from './supabaseClient';
 
-const seedUsers: StoredUser[] = [
-    // --- Hyderabad, Telangana, India ---
+interface SeedProfile {
+    email: string;
+    password_plaintext?: string; // only for accounts that need to log in
+    role: 'user' | 'author';
+    fullName?: string;
+    displayName?: string;
+    storeName?: string;
+    address?: string;
+    location?: { lat: number; lng: number };
+    inventory?: Medicine[];
+    searchHistory?: string[];
+}
+
+const seedProfiles: SeedProfile[] = [
+    // ─── Hyderabad Pharmacy Owners ───
     {
         email: 'owner1@apollothy.com',
         password_plaintext: 'password123',
@@ -161,7 +175,7 @@ const seedUsers: StoredUser[] = [
             { name: 'Ranitidine 150mg', brands: ['Zantac', 'Rantac 150'], stock: 125 },
         ],
     },
-     {
+    {
         email: 'owner5@lifecare.com',
         password_plaintext: 'password123',
         role: 'author',
@@ -280,7 +294,7 @@ const seedUsers: StoredUser[] = [
             { name: 'Heparin Injection', brands: [''], stock: 15 },
         ],
     },
-    // --- Test Users ---
+    // ─── Test / Customer Accounts ───
     {
         email: 'user@test.com',
         password_plaintext: 'password123',
@@ -299,15 +313,62 @@ const seedUsers: StoredUser[] = [
     },
 ];
 
+let seedingInProgress = false;
 
-export const seedInitialData = () => {
+/**
+ * Seeds all pharmacy and test-user profiles directly into the `profiles` table.
+ * Pharmacy rows are inserted WITHOUT creating Supabase Auth accounts — they are
+ * public read-only store data. For accounts that need login (role='user' + test
+ * pharmacy owners), auth sign-up is attempted as a best-effort.
+ */
+export const seedInitialData = async (): Promise<void> => {
+    if (seedingInProgress) return;
+    seedingInProgress = true;
+
     try {
-        const users = localStorage.getItem('medifind_users');
-        if (!users || JSON.parse(users).length === 0) {
-            localStorage.setItem('medifind_users', JSON.stringify(seedUsers));
-            console.log('Successfully seeded initial user data for Hyderabad.');
+        // Check how many author rows already exist
+        const { count, error: countErr } = await supabase
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('role', 'author');
+
+        if (countErr) {
+            console.warn('Seed check failed (table may not exist yet):', countErr.message);
+            seedingInProgress = false;
+            return;
+        }
+
+        if ((count ?? 0) > 0) {
+            console.log('Already seeded — skipping.');
+            seedingInProgress = false;
+            return;
+        }
+
+        console.log('Seeding MediFind data into Supabase…');
+
+        const rows = seedProfiles.map(s => ({
+            email: s.email,
+            role: s.role,
+            full_name: s.fullName ?? '',
+            display_name: s.displayName ?? '',
+            store_name: s.storeName ?? null,
+            address: s.address ?? null,
+            location: s.location ?? null,
+            inventory: s.inventory ?? null,
+            search_history: s.searchHistory ?? null,
+            auth_user_id: null, // no auth account for seed data
+        }));
+
+        const { error: insertErr } = await supabase.from('profiles').insert(rows);
+
+        if (insertErr) {
+            console.error('Seed insert failed:', insertErr.message);
+        } else {
+            console.log(`Seeded ${rows.length} profiles successfully.`);
         }
     } catch (e) {
-        console.error('Failed to seed data:', e);
+        console.warn('Seeding error:', e);
+    } finally {
+        seedingInProgress = false;
     }
 };

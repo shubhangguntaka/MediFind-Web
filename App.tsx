@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './components/LoginPage';
 import UserView from './components/UserView';
@@ -10,14 +10,27 @@ import ProfilePage from './components/ProfilePage';
 import Toast from './components/Toast';
 
 const App: React.FC = () => {
-  const { user } = useAuth();
+  const { user, resetPassword } = useAuth();
   const [isLoginVisible, setIsLoginVisible] = useState(false);
   const [view, setView] = useState<'main' | 'profile'>('main');
+  const [isResetMode, setIsResetMode] = useState(false);
 
   const [hasStarted, setHasStarted] = useState(() => {
-    // Check local storage on initial render
     return !!localStorage.getItem('medifind_has_started');
   });
+
+  // Handle password reset redirect from Supabase email link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+    // Supabase puts access_token in the URL hash after clicking the reset link
+    if (hashParams.get('type') === 'recovery' || params.get('reset_password') === 'true') {
+      setIsResetMode(true);
+      setIsLoginVisible(true);
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleGetStarted = () => {
     localStorage.setItem('medifind_has_started', 'true');
@@ -25,7 +38,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    setView('main'); // Reset to main view on logout
+    setView('main');
   };
 
   const renderContent = () => {
@@ -33,8 +46,13 @@ const App: React.FC = () => {
       return <WelcomePage onGetStarted={handleGetStarted} />;
     }
 
-    if (isLoginVisible && !user) {
-      return <LoginPage onClose={() => setIsLoginVisible(false)} />;
+    if ((isLoginVisible || isResetMode) && !user) {
+      return (
+        <LoginPage
+          onClose={() => { setIsLoginVisible(false); setIsResetMode(false); }}
+          initialMode={isResetMode ? 'reset' : undefined}
+        />
+      );
     }
 
     const renderMainView = () => {

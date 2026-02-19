@@ -133,21 +133,21 @@ const UserView: React.FC<UserViewProps> = ({ onLoginClick }) => {
   const currentLocation = manualLocation ?? autoDetectedLocation;
 
   useEffect(() => {
-    if (currentLocation || !isAutoLocationLoading) {
-      setIsInitialLoading(true);
-      getAllPharmacies(currentLocation)
-        .then(stores => {
-          setInitialStores(stores);
-        })
-        .catch(err => {
-          console.error("Failed to fetch initial stores:", err);
-          setError("Could not load pharmacy list.");
-        })
-        .finally(() => {
-          setIsInitialLoading(false);
-        });
-    }
-  }, [currentLocation, isAutoLocationLoading]);
+    // Load stores immediately — don't wait for geolocation.
+    // Pass currentLocation (may be null); stores will be unsorted until location resolves.
+    setIsInitialLoading(true);
+    getAllPharmacies(currentLocation)
+      .then(stores => {
+        setInitialStores(stores);
+      })
+      .catch(err => {
+        console.error("Failed to fetch initial stores:", err);
+        setError("Could not load pharmacy list.");
+      })
+      .finally(() => {
+        setIsInitialLoading(false);
+      });
+  }, [currentLocation]); // re-runs when location changes to re-sort by distance
 
 
   const handleSetManualLocation = (location: { lat: number; lng: number; name: string }) => {
