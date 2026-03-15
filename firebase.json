@@ -1,0 +1,11 @@
+{
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "MediFind",
+        "supportEmail": "22r01a7331@cmrithyderabad.edu.in"
+      }
+    }
+  }
+}

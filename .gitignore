@@ -1,3 +1,8 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+
 # Logs
 logs
 *.log
@@ -7,33 +12,57 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencies
-node_modules
-.pnpm-store
+# Build and Tooling
+dist/
+**/dist/
+dist-ssr/
+build/
+**/build/
+.next/
+out/
+.cache/
+.parcel-cache/
+.vite-inspect/
 
-# Build output
-dist
-dist-ssr
-*.local
-
-# Environment variables
+# Environment Variables (CRITICAL: Do not commit these)
 .env
-*.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+*.env
+*.env.local
+**/ .env
+**/ .env.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# OS Files
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+.directory
 
-# Vercel
-.vercel
+# Editor/IDE Files
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.sln
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Firebase/Vercel/Hosting
+.firebase/
+.vercel/
+firebase-debug.log*
+.firebaserc
+
+# Misc
+*.local
+*.tsbuildinfo
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
